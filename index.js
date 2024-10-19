@@ -11,8 +11,8 @@ app.get('/currency-rates', async (req, res) => {
   let browser;
   try {
     browser = await puppeteer.launch({
-      headless: true, // Change to false if you want to see the browser
-      args: ['--no-sandbox', '--disable-setuid-sandbox'], // Use these args if you're running in a restricted environment
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Adjust the path as needed
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Use these args if you're running in a restricted environment
     });
     const page = await browser.newPage();
 

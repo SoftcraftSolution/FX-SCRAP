@@ -8,8 +8,12 @@ const port = 3000;
 const url = 'https://www.investing.com/currencies/';
 
 app.get('/currency-rates', async (req, res) => {
+  let browser;
   try {
-    const browser = await puppeteer.launch({ headless: true });
+    browser = await puppeteer.launch({
+      headless: true, // Change to false if you want to see the browser
+      args: ['--no-sandbox', '--disable-setuid-sandbox'], // Use these args if you're running in a restricted environment
+    });
     const page = await browser.newPage();
 
     // Go to the Investing.com currency rates page
@@ -35,8 +39,6 @@ app.get('/currency-rates', async (req, res) => {
       });
     });
 
-    await browser.close();
-
     // Send the data as a JSON response
     res.json({
       success: true,
@@ -51,6 +53,10 @@ app.get('/currency-rates', async (req, res) => {
       success: false,
       message: 'Failed to scrape currency rates from Investing.com',
     });
+  } finally {
+    if (browser) {
+      await browser.close(); // Ensure the browser is closed in case of an error
+    }
   }
 });
 

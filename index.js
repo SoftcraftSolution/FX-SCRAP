@@ -1,24 +1,23 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('chrome-aws-lambda'); // Using chrome-aws-lambda
 
 const app = express();
-const port = 3000;
-
-// Investing.com currency rates URL
-const url = 'https://www.investing.com/currencies/';
+const port = process.env.PORT || 3000;
 
 app.get('/currency-rates', async (req, res) => {
   try {
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+    });
+
     const page = await browser.newPage();
-
-    // Go to the Investing.com currency rates page
-    await page.goto(url, { waitUntil: 'networkidle2' });
-
-    // Wait for the currency rates table to load
+    await page.goto('https://www.investing.com/currencies/', { waitUntil: 'networkidle2' });
+    
     await page.waitForSelector('#cr1', { timeout: 60000 });
 
-    // Scrape the data
     const rates = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll('#cr1 tbody tr'));
       return rows.map(row => {
@@ -37,7 +36,6 @@ app.get('/currency-rates', async (req, res) => {
 
     await browser.close();
 
-    // Send the data as a JSON response
     res.json({
       success: true,
       data: rates,
@@ -45,8 +43,6 @@ app.get('/currency-rates', async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching data: ', error);
-
-    // Send error response
     res.status(500).json({
       success: false,
       message: 'Failed to scrape currency rates from Investing.com',

@@ -1,50 +1,27 @@
 const express = require('express');
-const axios = require('axios');
-const cheerio = require('cheerio');
+
+const mongoose = require('mongoose');
+const userRoutes=require('./src/route/fx')
+
+// Importing Metal model
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
+app.use('/api', userRoutes);
+// MongoDB connection
+mongoose.connect('mongodb+srv://Rahul:myuser@rahul.fack9.mongodb.net/FXSCRAP?authSource=admin&replicaSet=atlas-117kuv-shard-0&w=majority&readPreference=primary&retryWrites=true&ssl=true', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+    .then(() => console.log("Connected to MongoDB"))
+    .catch(error => console.error("MongoDB connection error:", error));
 
-// Moneycontrol Currency Rates URL
-const url = 'https://www.moneycontrol.com/markets/currencies/';
+// Metal name translation from Chinese to English
 
-app.get('/forward-rates', async (req, res) => {
-  try {
-    // Fetch the HTML of the Moneycontrol currencies page
-    const { data } = await axios.get(url);
-    
-    // Load the HTML into cheerio
-    const $ = cheerio.load(data);
 
-    // Scrape the forward rates data
-    const forwardRates = [];
-    
-    // Find the table containing the forward rates
-    const rows = $('.Rbirefrencerate_web_rbi_ref_frwd_rates_sec__iKUxS table tbody tr');
-    rows.each((index, row) => {
-      const currencyPair = $(row).find('td:nth-child(1)').text().trim() || 'N/A';
-      const rate = $(row).find('td:nth-child(2)').text().trim() || 'N/A';
-      forwardRates.push({ currencyPair, rate });
-    });
 
-    // Send the forward rates data as a JSON response
-    res.json({
-      success: true,
-      data: forwardRates,
-    });
-
-  } catch (error) {
-    console.error('Error fetching data: ', error);
-
-    // Send error response
-    res.status(500).json({
-      success: false,
-      message: 'Failed to scrape forward rates from Moneycontrol',
-    });
-  }
-});
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });

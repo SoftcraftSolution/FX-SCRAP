@@ -7,6 +7,9 @@ const currencySchema = new mongoose.Schema({
         required: true,
         unique: true,  // Assuming each symbol is unique
     },
+    name:{
+        type:String,
+    },
     price: {
         type: String,
         required: true,

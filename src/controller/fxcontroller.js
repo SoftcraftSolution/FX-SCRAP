@@ -16,12 +16,18 @@ exports.fetchAndReturnCurrencyData = async (req, res) => {
         const currencies = [];
         $('table tbody tr').each((index, element) => {
             const symbol = $(element).find('td:nth-child(1)').text().trim();
-            const price = $(element).find('td:nth-child(2)').text().trim();
-            const change = $(element).find('td:nth-child(3)').text().trim();
-            const changePercentage = $(element).find('td:nth-child(4)').text().trim();
+            const name = $(element).find('td:nth-child(2)').text().trim();
+            const priceWithChange = $(element).find('td:nth-child(4)').text().trim(); // Assuming price and change are in the same column
+
+            // Split the fetched change data to get price, change, and changePercentage
+            const parts = priceWithChange.split(' '); // Assuming format "price change (changePercentage)"
+            const price = parts[0]; // Extract price
+            const change = parts[1]; // Extract change
+            const changePercentage = parts[2].replace(/\(|\)/g, ''); // Remove parentheses
 
             currencies.push({
                 symbol,
+                name,
                 price,
                 change,
                 changePercentage,
@@ -33,10 +39,28 @@ exports.fetchAndReturnCurrencyData = async (req, res) => {
         for (const currency of currencies) {
             const updatedCurrency = await Currency.findOneAndUpdate(
                 { symbol: currency.symbol },
-                currency,
+                {
+                    name: currency.name, // Ensure name is included
+                    price: currency.price,
+                    change: currency.change,
+                    changePercentage: currency.changePercentage,
+                    updatedAt: new Date(), // Update the timestamp
+                },
                 { new: true, upsert: true } // Return the updated document
             );
-            updatedCurrencies.push(updatedCurrency); // Push the updated document
+
+            // Structure the response to match your required format
+            updatedCurrencies.push({
+                _id: updatedCurrency._id,
+                symbol: updatedCurrency.symbol,
+                __v: updatedCurrency.__v,
+                change: updatedCurrency.change,
+                changePercentage: updatedCurrency.changePercentage,
+                createdAt: updatedCurrency.createdAt,
+                price: updatedCurrency.price,
+                updatedAt: updatedCurrency.updatedAt,
+                name: updatedCurrency.name,
+            });
         }
 
         console.log('Currency data updated in the database.');
